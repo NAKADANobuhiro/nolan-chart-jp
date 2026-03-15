@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ノーランチャート：日本政党・海外比較・政治理論</title>
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<h1>ノーランチャート：日本政党・海外比較・政治理論の位置づけ</h1>
+<p class="subtitle">横軸：経済的自由（左＝大きな政府 ／ 右＝小さな政府）　縦軸：個人的自由（下＝権威主義 ／ 上＝自由主義）<br>チェックボックスで表示／非表示を切替 ／ カード本体クリックで道徳基盤を展開</p>
+
+<div class="layout">
+  <div class="chart-wrap">
+    <canvas id="c" width="696" height="696"></canvas>
+    <div class="legend-row">
+      <div class="legend-item"><div class="l-dot"     style="background:#e63232"></div>日本の政党</div>
+      <div class="legend-item"><div class="l-diamond" style="background:#c8a000"></div>海外の主要政党</div>
+      <div class="legend-item"><div class="l-tri"     style="border-bottom-color:#7ec8e3"></div>政治理論・国家形態</div>
+    </div>
+  </div>
+  <div class="side" id="side"></div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/nolan-chart.js"></script>
+</body>
+</html>
