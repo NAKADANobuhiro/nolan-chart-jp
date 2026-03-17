@@ -100,11 +100,3 @@ Y（個人的自由） = clamp( (h6 - h4 - 0.5×h5 - 0.3×h3 + 180) / 280 )
 
 ---
 
-## 関連ファイル
-
-| ファイル | 内容 |
-|----------|------|
-| `nolan_deneb.json` | Power BI Deneb ビジュアル用Vega-Liteスペック |
-| `japan_nolan_chart.pbix` | Power BI レポートファイル |
-| `nolan_data.xlsx` | 元データ（Excel形式） |
-| `日本政党_ハイト道徳基盤_ノーランチャート.md` | 分析メモ |
