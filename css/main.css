@@ -198,6 +198,44 @@ canvas { display: block; border-radius: 8px; }
   line-height: 1.6;
 }
 
+/* ── Zoom Controls ── */
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.zoom-controls button {
+  background: #1a1d26;
+  border: 1px solid #3a3d50;
+  color: #ccc;
+  border-radius: 5px;
+  padding: 3px 11px;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1.4;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  user-select: none;
+}
+.zoom-controls button:hover {
+  background: #2a2d3a;
+  border-color: #5a7fd4;
+  color: #fff;
+}
+#zoom-display {
+  font-size: 0.78rem;
+  color: #888;
+  min-width: 40px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+#zoom-reset-btn {
+  font-size: 0.75rem;
+  padding: 3px 9px;
+  color: #888;
+}
+
 /* ── Legend ── */
 .legend-row {
   display: flex; gap: 14px; flex-wrap: wrap;

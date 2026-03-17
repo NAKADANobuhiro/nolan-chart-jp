@@ -1,11 +1,24 @@
 // ─── CANVAS SETUP ────────────────────────────────────────────────────────────
-const W = 696, H = 696;
+const W = 626, H = 626;
 const PAD_T = 18, PAD_B = 63, PAD_L = 63, PAD_R = 28;
 const CW = W - PAD_L - PAD_R, CH = H - PAD_T - PAD_B;
 function px(x, y) { return [PAD_L + x*CW, PAD_T + (1-y)*CH]; }
 
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
+
+// ─── ZOOM & PAN STATE ────────────────────────────────────────────────────────
+let zoom = 1.0;
+let panX = 0, panY = 0;
+const MIN_ZOOM = 0.5, MAX_ZOOM = 5.0;
+
+// HiDPI（Retina等）対応：devicePixelRatioでCanvasを高解像度化
+const dpr = window.devicePixelRatio || 1;
+canvas.width  = W * dpr;
+canvas.height = H * dpr;
+canvas.style.width  = W + 'px';
+canvas.style.height = H + 'px';
+ctx.scale(dpr, dpr);
 
 // ─── VISIBILITY STATE ────────────────────────────────────────────────────────
 const visible = new Set();   // filled after data declared
@@ -23,6 +36,12 @@ const barColors = {
 // ─── DRAW ─────────────────────────────────────────────────────────────────────
 function drawChart() {
   ctx.clearRect(0, 0, W, H);
+
+  // ズーム変換（キャンバス中心基準）
+  ctx.save();
+  ctx.translate(panX + W/2, panY + H/2);
+  ctx.scale(zoom, zoom);
+  ctx.translate(-W/2, -H/2);
 
   // Quadrant fills
   [
@@ -98,21 +117,15 @@ function drawChart() {
   // Japan cluster ellipse
   ctx.save();
   ctx.strokeStyle='rgba(255,255,100,0.13)'; ctx.lineWidth=2; ctx.setLineDash([5,4]);
-  const [ex,ey]=px(0.35,0.55);
-  ctx.beginPath(); ctx.ellipse(ex, ey, CW*0.28, CH*0.24, 0, 0, Math.PI*2); ctx.stroke();
+//  const [ex,ey]=px(0.43,0.47);  // 実態: X中心≈0.43、Y中心≈0.47
+  const [ex,ey]=px(0.35,0.50);  // 実態: X中心≈0.43、Y中心≈0.47
+  ctx.beginPath(); ctx.ellipse(ex, ey, CW*0.25, CH*0.24, 0, 0, Math.PI*2); ctx.stroke();
   ctx.setLineDash([]);
   ctx.font='10px sans-serif'; ctx.fillStyle='rgba(255,255,100,0.35)'; ctx.textAlign='center';
   ctx.fillText('日本の政党が集中する範囲', ex, ey+CH*0.24+13);
   ctx.restore();
 
-  // Axis labels
-  ctx.font='11px sans-serif'; ctx.textAlign='center'; ctx.fillStyle='#666';
-  ctx.fillText('← 大きな政府（経済介入）', PAD_L+CW*0.25, PAD_T+CH+32);
-  ctx.fillText('小さな政府（経済自由） →', PAD_L+CW*0.75, PAD_T+CH+32);
-  ctx.save(); ctx.translate(14, PAD_T+CH*0.25); ctx.rotate(-Math.PI/2);
-  ctx.fillText('↑ 自由主義（個人の自由重視）', 0, 0); ctx.restore();
-  ctx.save(); ctx.translate(14, PAD_T+CH*0.75); ctx.rotate(-Math.PI/2);
-  ctx.fillText('権威主義（社会統制重視）↓', 0, 0); ctx.restore();
+  // ※ 軸ラベルはズーム変換の外で描画（常に固定表示）→ ctx.restore() 後に移動
 
   // ── concepts: triangles ──
   concepts.forEach(c => {
@@ -176,6 +189,32 @@ function drawChart() {
     ctx.textAlign   = 'center';
     ctx.fillText(p.abbr, cx, cy + (cy < PAD_T+28 ? 19 : -14));
   });
+
+  ctx.restore(); // ズーム変換を戻す
+
+  // ── 軸ラベル（ズーム/パンに追従しつつ常にcanvas内に収める）────────────────
+  ctx.font='11px sans-serif'; ctx.fillStyle='#666';
+
+  // スクリーン座標変換ヘルパー
+  const toSX = lx => zoom * (lx - W/2) + panX + W/2;
+  const toSY = ly => zoom * (ly - H/2) + panY + H/2;
+
+  // 横軸ラベル: Y はcanvas底辺（PAD_B内）固定、X はチャート左右半を追従
+  const hLabelY = H - 12;
+  const lLeftX  = Math.max(50,      Math.min(toSX(PAD_L + CW*0.25), W/2 - 10));
+  const lRightX = Math.max(W/2+10,  Math.min(toSX(PAD_L + CW*0.75), W - 30));
+  ctx.textAlign = 'center';
+  ctx.fillText('← 大きな政府（経済介入）', lLeftX,  hLabelY);
+  ctx.fillText('小さな政府（経済自由） →', lRightX, hLabelY);
+
+  // 縦軸ラベル: 90°回転、Y はチャート上下半を追従
+  const vLabelX = 14;
+  const lTopY    = Math.max(30,      Math.min(toSY(PAD_T + CH*0.25), H/2 - 10));
+  const lBottomY = Math.max(H/2+10,  Math.min(toSY(PAD_T + CH*0.75), H - 20));
+  ctx.save(); ctx.translate(vLabelX, lTopY);    ctx.rotate(-Math.PI/2);
+  ctx.textAlign = 'center'; ctx.fillText('自由主義（個人の自由重視）→', 0, 0); ctx.restore();
+  ctx.save(); ctx.translate(vLabelX, lBottomY); ctx.rotate(-Math.PI/2);
+  ctx.textAlign = 'center'; ctx.fillText('← 権威主義（社会統制重視）',  0, 0); ctx.restore();
 }
 
 // ─── SIDE PANEL ──────────────────────────────────────────────────────────────
@@ -350,6 +389,9 @@ const note = document.createElement('div');
 note.className = 'note-box';
 note.innerHTML = `
   <strong>操作方法</strong><br>
+  🔍 マウスホイール … チャートをズームイン／ズームアウト（カーソル位置中心）<br>
+  🖱 ドラッグ … ズーム時にチャートをパン（移動）<br>
+  ＋／－ボタン … ズームイン／アウト　↺ … 表示リセット<br>
   ☑ チェックボックス … 個別の表示／非表示を切替<br>
   「すべてOFF/ON」ボタン … セクション全体を一括切替<br>
   マウスオーバー（チャート／カード） … 名称と説明を表示<br>
@@ -364,18 +406,61 @@ side.appendChild(note);
 const allItems = [...jpParties, ...foreignParties, ...concepts];
 const HIT_R = 16;  // ヒット判定半径（px）
 
-canvas.addEventListener('mousemove', e => {
+// ─── ZOOM HELPERS ────────────────────────────────────────────────────────────
+function updateZoomDisplay() {
+  const el = document.getElementById('zoom-display');
+  if (el) el.textContent = Math.round(zoom * 100) + '%';
+}
+
+// マウスホイールでズーム（カーソル位置中心）
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
   const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width  / rect.width;
-  const scaleY = canvas.height / rect.height;
-  const mx = (e.clientX - rect.left) * scaleX;
-  const my = (e.clientY - rect.top)  * scaleY;
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+  const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+  const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom * factor));
+  const f = newZoom / zoom;
+  panX = panX + (1 - f) * (mouseX - panX - W/2);
+  panY = panY + (1 - f) * (mouseY - panY - H/2);
+  zoom = newZoom;
+  updateZoomDisplay();
+  drawChart();
+}, { passive: false });
+
+// ドラッグでパン
+let isDragging = false, dragSX, dragSY, dragPX, dragPY;
+
+canvas.addEventListener('mousedown', e => {
+  isDragging = true;
+  dragSX = e.clientX; dragSY = e.clientY;
+  dragPX = panX;      dragPY = panY;
+});
+window.addEventListener('mouseup', () => { isDragging = false; });
+
+// ─── CANVAS MOUSE EVENTS ─────────────────────────────────────────────────────
+canvas.addEventListener('mousemove', e => {
+  if (isDragging) {
+    panX = dragPX + (e.clientX - dragSX);
+    panY = dragPY + (e.clientY - dragSY);
+    drawChart();
+    hideTooltip();
+    canvas.style.cursor = 'grabbing';
+    return;
+  }
+
+  const rect = canvas.getBoundingClientRect();
+  const cssX = e.clientX - rect.left;
+  const cssY = e.clientY - rect.top;
+  // 逆変換でズーム適用後の描画座標に変換
+  const mx = (cssX - panX - W/2) / zoom + W/2;
+  const my = (cssY - panY - H/2) / zoom + H/2;
 
   let found = null;
   for (const item of allItems) {
     if (!visible.has(item.name)) continue;
     const [cx, cy] = px(item.x, item.y);
-    if (Math.hypot(mx - cx, my - cy) < HIT_R) { found = item; break; }
+    if (Math.hypot(mx - cx, my - cy) < HIT_R / zoom) { found = item; break; }
   }
 
   if (found) {
@@ -383,7 +468,7 @@ canvas.addEventListener('mousemove', e => {
     canvas.style.cursor = 'pointer';
   } else {
     hideTooltip();
-    canvas.style.cursor = 'default';
+    canvas.style.cursor = zoom > 1.01 ? 'grab' : 'default';
   }
 });
 
@@ -393,3 +478,23 @@ canvas.addEventListener('mouseleave', () => {
 });
 
 drawChart();
+
+// ─── ZOOM BUTTONS ─────────────────────────────────────────────────────────────
+document.getElementById('zoom-in-btn').addEventListener('click', () => {
+  const newZoom = Math.min(MAX_ZOOM, zoom * 1.25);
+  const f = newZoom / zoom;
+  panX *= f; panY *= f;
+  zoom = newZoom;
+  updateZoomDisplay(); drawChart();
+});
+document.getElementById('zoom-out-btn').addEventListener('click', () => {
+  const newZoom = Math.max(MIN_ZOOM, zoom / 1.25);
+  const f = newZoom / zoom;
+  panX *= f; panY *= f;
+  zoom = newZoom;
+  updateZoomDisplay(); drawChart();
+});
+document.getElementById('zoom-reset-btn').addEventListener('click', () => {
+  zoom = 1; panX = 0; panY = 0;
+  updateZoomDisplay(); drawChart();
+});

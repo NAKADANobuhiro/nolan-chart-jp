@@ -13,11 +13,17 @@
 
 <div class="layout">
   <div class="chart-wrap">
-    <canvas id="c" width="696" height="696"></canvas>
+    <canvas id="c" width="626" height="626"></canvas>
     <div class="legend-row">
       <div class="legend-item"><div class="l-dot"     style="background:#e63232"></div>日本の政党</div>
       <div class="legend-item"><div class="l-diamond" style="background:#c8a000"></div>海外の主要政党</div>
       <div class="legend-item"><div class="l-tri"     style="border-bottom-color:#7ec8e3"></div>政治理論・国家形態</div>
+    </div>
+    <div class="zoom-controls">
+      <button id="zoom-out-btn" title="ズームアウト">－</button>
+      <span id="zoom-display">100%</span>
+      <button id="zoom-in-btn" title="ズームイン">＋</button>
+      <button id="zoom-reset-btn" title="リセット">↺ リセット</button>
     </div>
   </div>
   <div class="side" id="side"></div>
